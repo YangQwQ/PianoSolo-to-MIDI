@@ -1,7 +1,4 @@
-*
-!*/
-!*.*
-*.hdf5
-*.pyc
-__pycache__
 workspace/
+__pycache__/
+*.pyc
+.claude/
