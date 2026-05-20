@@ -10,6 +10,7 @@ import librosa
 import torch
 import piano_transcription_inference
 import piano_transcription_inference.utilities as piu
+import midi_align
 
 
 # ── patch: 兼容新版 librosa（0.10+ 废弃了 core.audio API） ──
@@ -143,6 +144,9 @@ def transcribe_file(args):
         with _progress_bar(filename):
             transcriptor.transcribe(audio, midi_path)
 
+        if args.align_strength > 0:
+            midi_align.align_midi_file(midi_path, args.align_strength, args.align_threshold)
+
         print(f'  -> {midi_path}')
 
 
@@ -156,6 +160,11 @@ if __name__ == '__main__':
         help='mp3 file path or directory containing mp3 files')
     parser_transcribe_file.add_argument('--output', type=str, required=True,
         help='output midi file path or directory')
+    parser_transcribe_file.add_argument('--align-strength', type=float, default=0.0,
+        help='Align notes that start almost simultaneously. '
+             '0.0 = no change, 1.0 = full quantization. Default: 0.0 (disabled)')
+    parser_transcribe_file.add_argument('--align-threshold', type=float, default=0.05,
+        help='Time window in seconds for grouping notes. Default: 0.05 (50ms)')
 
     args = parser.parse_args()
 

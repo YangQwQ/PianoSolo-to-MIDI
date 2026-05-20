@@ -39,6 +39,23 @@ python audios_to_midis.py transcribe_file \
 python audios_to_midis.py transcribe_file --input ./workspace/mp3s/my_song.mp3 --output ./workspace/midis/my_song.mid
 ```
 
+### 5. MIDI 音符对齐
+
+转录后可以对 MIDI 音符进行对齐（类似量化），将几乎同时响起的音符的起始时间对齐，让节奏更紧凑：
+
+```bash
+python audios_to_midis.py transcribe_file \
+    --input ./workspace/mp3s \
+    --output ./workspace/midis \
+    --align-strength 1.0 \
+    --align-threshold 0.05
+```
+
+- `--align-strength`: 对齐强度，0.0 = 不做对齐（默认），1.0 = 完全对齐（组内音符完全同步），0.5 = 移动到一半位置。推荐从 0.5 开始尝试
+- `--align-threshold`: 时间窗口（秒），在此窗口内的音符被视为一组并对齐。默认 0.05（50ms）
+
+对齐会保持音符的时值不变（结束时间随起始时间同步偏移），踏板事件不受影响。
+
 ## 注意事项
 
 - **需要 NVIDIA 显卡 + CUDA 版 PyTorch** 才能 GPU 加速，CPU 也能跑但很慢
