@@ -2,3 +2,4 @@ workspace/
 __pycache__/
 *.pyc
 .claude/
+piano_svsep_repo/

@@ -11,6 +11,7 @@ import torch
 import piano_transcription_inference
 import piano_transcription_inference.utilities as piu
 import midi_align
+import midi_separate
 
 
 # ── patch: 兼容新版 librosa（0.10+ 废弃了 core.audio API） ──
@@ -147,6 +148,11 @@ def transcribe_file(args):
         if args.align_strength > 0:
             midi_align.align_midi_file(midi_path, args.align_strength, args.align_threshold)
 
+        if args.separate_voices:
+            sep_path = os.path.splitext(midi_path)[0] + '_separated.mid'
+            midi_separate.separate_midi_voices(midi_path, sep_path, args.svsep_model, device=device)
+            print(f'  -> {sep_path}')
+
         print(f'  -> {midi_path}')
 
 
@@ -165,6 +171,12 @@ if __name__ == '__main__':
              '0.0 = no change, 1.0 = full quantization. Default: 0.0 (disabled)')
     parser_transcribe_file.add_argument('--align-threshold', type=float, default=0.05,
         help='Time window in seconds for grouping notes. Default: 0.05 (50ms)')
+    parser_transcribe_file.add_argument('--separate-voices', action='store_true', default=False,
+        help='Separate MIDI into multiple tracks by voice (using piano_svsep GNN)')
+    parser_transcribe_file.add_argument('--svsep-model', type=str,
+        default=os.path.join(os.path.dirname(os.path.abspath(__file__)),
+            'piano_svsep_repo', 'pretrained_models', 'model.ckpt'),
+        help='Path to piano_svsep model checkpoint')
 
     args = parser.parse_args()
 

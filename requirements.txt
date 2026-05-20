@@ -1,3 +1,10 @@
 piano_transcription_inference
 librosa<0.10
 resampy
+
+# MIDI voice separation (optional)
+partitura
+pytorch_lightning
+torch_geometric
+torchmetrics
+pandas

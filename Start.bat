@@ -12,5 +12,6 @@ if exist .venv\Scripts\python.exe (
     --input ./workspace/mp3s ^
     --output ./workspace/midis ^
     --align-strength 1.0 ^
-    --align-threshold 0.005
+    --align-threshold 0.01 ^
+	--separate-voices
 pause

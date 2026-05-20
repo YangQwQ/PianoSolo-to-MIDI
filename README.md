@@ -56,6 +56,28 @@ python audios_to_midis.py transcribe_file \
 
 对齐会保持音符的时值不变（结束时间随起始时间同步偏移），踏板事件不受影响。
 
+### 6. MIDI 多音轨声部分离
+
+转录后可以使用 GNN 模型自动将单轨 MIDI 按声部拆分为多轨（如左右手分离）：
+
+```bash
+python audios_to_midis.py transcribe_file \
+    --input ./workspace/mp3s \
+    --output ./workspace/midis \
+    --separate-voices
+```
+
+- `--separate-voices`: 启用声部分离，输出文件名为 `原文件名_separated.mid`
+- `--svsep-model`: 预训练模型路径（默认使用内置模型）
+- 可同时使用 `--align-strength` 先对齐再分离
+- 基于 [piano_svsep](https://github.com/CPJKU/piano_svsep)（ISMIR 2024 最佳论文提名），使用图神经网络进行声部/谱表分离
+
+输出 MIDI 包含多个音轨：
+- Track 0: 速度和拍号
+- Track 1-2: 上谱表声部（右手）
+- Track 5-6: 下谱表声部（左手）
+- Pedal Track: 踏板事件
+
 ## 注意事项
 
 - **需要 NVIDIA 显卡 + CUDA 版 PyTorch** 才能 GPU 加速，CPU 也能跑但很慢
