@@ -150,7 +150,7 @@ def transcribe_file(args):
 
         if args.separate_voices:
             sep_path = os.path.splitext(midi_path)[0] + '_separated.mid'
-            midi_separate.separate_midi_voices(midi_path, sep_path, args.svsep_model, device=device)
+            midi_separate.separate_midi_voices(midi_path, sep_path, args.svsep_model, device=device, mode=args.sep_mode)
             print(f'  -> {sep_path}')
 
         print(f'  -> {midi_path}')
@@ -177,6 +177,10 @@ if __name__ == '__main__':
         default=os.path.join(os.path.dirname(os.path.abspath(__file__)),
             'piano_svsep_repo', 'pretrained_models', 'model.ckpt'),
         help='Path to piano_svsep model checkpoint')
+    parser_transcribe_file.add_argument('--sep-mode', type=str, default='voice',
+        choices=['voice', 'staff'],
+        help='Separation mode: "voice" = one track per voice (default), '
+             '"staff" = left/right hand only (2 tracks)')
 
     args = parser.parse_args()
 

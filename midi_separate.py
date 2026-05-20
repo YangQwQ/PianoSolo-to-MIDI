@@ -1,5 +1,7 @@
 """MIDI voice/staff separation using piano_svsep GNN model."""
 
+import os
+import urllib.request
 import numpy as np
 import torch
 import torch_geometric as pyg
@@ -102,15 +104,31 @@ def _get_voice_labels(midi_path, model, device='cpu'):
     return voice_labels, staff_labels, na
 
 
-def separate_midi_voices(midi_path, output_path, model_path, device='cpu'):
-    """Separate a single-track piano MIDI into multiple tracks by voice.
+MODEL_URL = 'https://github.com/CPJKU/piano_svsep/raw/main/pretrained_models/model.ckpt'
+
+
+def _download_model(model_path):
+    """Download the pretrained model checkpoint if missing."""
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
+    print(f'  Downloading model checkpoint (34.8 MB)...')
+    urllib.request.urlretrieve(MODEL_URL, model_path)
+    print(f'  Model saved to {model_path}')
+
+
+def separate_midi_voices(midi_path, output_path, model_path, device='cpu', mode='voice'):
+    """Separate a single-track piano MIDI into multiple tracks.
 
     Args:
         midi_path: path to input MIDI file
         output_path: path for output multi-track MIDI
         model_path: path to piano_svsep model checkpoint
         device: 'cpu' or 'cuda'
+        mode: 'voice' = one track per voice (4-6 tracks),
+              'staff' = one track per staff / left+right hand (2 tracks)
     """
+    if not os.path.exists(model_path):
+        _download_model(model_path)
+
     pl_model = PLPianoSVSep.load_from_checkpoint(
         model_path, map_location=device, strict=False, weights_only=False)
 
@@ -152,23 +170,48 @@ def separate_midi_voices(midi_path, output_path, model_path, device='cpu'):
     if matched < len(note_events):
         print(f'  Note: matched {matched}/{len(note_events)} notes with voice labels')
 
-    _write_multitrack_midi(note_events, pedal_events, tempo_info, output_path)
+    _write_multitrack_midi(note_events, pedal_events, tempo_info, output_path, mode)
     voices_found = set(ev.get('voice', 1) for ev in note_events)
-    print(f'  Output: {len(voices_found)} tracks (voices: {sorted(voices_found)})')
+    if mode == 'staff':
+        print(f'  Mode: staff → {len(voices_found)} voice(s) grouped into 2 tracks (left/right hand)')
+    else:
+        print(f'  Output: {len(voices_found)} tracks (voices: {sorted(voices_found)})')
 
 
-def _write_multitrack_midi(note_events, pedal_events, tempo_info, midi_path):
-    """Write note events grouped by voice to separate MIDI tracks."""
+def _write_multitrack_midi(note_events, pedal_events, tempo_info, midi_path, mode='voice'):
+    """Write note events grouped by voice or staff to separate MIDI tracks.
+
+    Args:
+        mode: 'voice' = one track per voice, 'staff' = one track per staff (left/right hand)
+    """
     ticks_per_beat = tempo_info['ticks_per_beat']
     microseconds_per_beat = tempo_info['microseconds_per_beat']
     ticks_per_second = tempo_info['ticks_per_second']
 
-    voices = {}
-    for ev in note_events:
-        v = ev.get('voice', 1)
-        voices.setdefault(v, []).append(ev)
+    if mode == 'staff':
+        # Group by staff: staff 1 = upper (right hand), staff 2 = lower (left hand)
+        groups = {}
+        for ev in note_events:
+            s = ev.get('staff', 1)
+            groups.setdefault(s, []).append(ev)
+        group_names = {
+            1: 'Right Hand (upper staff)',
+            2: 'Left Hand (lower staff)',
+        }
+    else:
+        # Group by individual voice
+        groups = {}
+        for ev in note_events:
+            v = ev.get('voice', 1)
+            groups.setdefault(v, []).append(ev)
+        group_names = {
+            1: 'Voice 1 (upper staff)',
+            2: 'Voice 2 (upper staff)',
+            5: 'Voice 5 (lower staff)',
+            6: 'Voice 6 (lower staff)',
+        }
 
-    sorted_voices = sorted(voices.keys())
+    sorted_groups = sorted(groups.keys())
     midi_file = MidiFile()
     midi_file.ticks_per_beat = ticks_per_beat
 
@@ -179,25 +222,18 @@ def _write_multitrack_midi(note_events, pedal_events, tempo_info, midi_path):
     track0.append(MetaMessage('end_of_track', time=1))
     midi_file.tracks.append(track0)
 
-    voice_names = {
-        1: 'Voice 1 (upper staff)',
-        2: 'Voice 2 (upper staff)',
-        5: 'Voice 5 (lower staff)',
-        6: 'Voice 6 (lower staff)',
-    }
-
     # All tracks share time origin 0 so notes keep their absolute positions
     # across tracks. Each track's first note gets a positive delta-time equal
     # to its absolute onset, which is valid in MIDI.
     global_start = 0.0
 
-    for v in sorted_voices:
+    for g in sorted_groups:
         track = MidiTrack()
-        name = voice_names.get(v, f'Voice {v}')
+        name = group_names.get(g, f'Voice {g}')
         track.append(MetaMessage('track_name', name=name, time=0))
 
         message_roll = []
-        for ev in voices[v]:
+        for ev in groups[g]:
             message_roll.append({'time': ev['onset'], 'note': ev['note'], 'velocity': ev['velocity']})
             message_roll.append({'time': ev['offset'], 'note': ev['note'], 'velocity': 0})
 

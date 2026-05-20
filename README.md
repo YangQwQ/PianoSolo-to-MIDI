@@ -68,14 +68,23 @@ python audios_to_midis.py transcribe_file \
 ```
 
 - `--separate-voices`: 启用声部分离，输出文件名为 `原文件名_separated.mid`
-- `--svsep-model`: 预训练模型路径（默认使用内置模型）
+- `--svsep-model`: 预训练模型路径（默认使用内置模型，首次运行自动下载 34.8MB）
+- `--sep-mode`: 分离模式（默认 `voice`）
+  - `voice` — 按声部拆分，每个声部独立一轨（最多 4-6 轨）
+  - `staff` — 按左右手拆分为两轨（Right Hand + Left Hand）
 - 可同时使用 `--align-strength` 先对齐再分离
 - 基于 [piano_svsep](https://github.com/CPJKU/piano_svsep)（ISMIR 2024 最佳论文提名），使用图神经网络进行声部/谱表分离
 
-输出 MIDI 包含多个音轨：
+**voice 模式**输出 MIDI 包含多个音轨：
 - Track 0: 速度和拍号
 - Track 1-2: 上谱表声部（右手）
 - Track 5-6: 下谱表声部（左手）
+- Pedal Track: 踏板事件
+
+**staff 模式**输出 MIDI 包含三个音轨：
+- Track 0: 速度和拍号
+- Track 1: Right Hand (upper staff)
+- Track 2: Left Hand (lower staff)
 - Pedal Track: 踏板事件
 
 ## 注意事项

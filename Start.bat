@@ -13,5 +13,6 @@ if exist .venv\Scripts\python.exe (
     --output ./workspace/midis ^
     --align-strength 1.0 ^
     --align-threshold 0.01 ^
-	--separate-voices
+	--separate-voices ^
+	--sep-mode "staff"
 pause
