@@ -8,10 +8,10 @@
 
 ### 1. 安装依赖
 
+先安装 PyTorch（CUDA 版本，用于 GPU 加速）
+* 去 [pytorch](https://pytorch.org/get-started/locally/) 选你的 CUDA 版本生成安装命令，例如：
 ```bash
-# 先安装 PyTorch（CUDA 版本，用于 GPU 加速）
-# 去 https://pytorch.org/ 选你的 CUDA 版本生成安装命令，例如：
-pip install torch --index-url https://download.pytorch.org/whl/cu126
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu132
 
 # 再装其他依赖
 pip install -r requirements.txt
@@ -36,9 +36,7 @@ python audios_to_midis.py transcribe_file \
 ### 4. 单文件转录
 
 ```bash
-python audios_to_midis.py transcribe_file \
-    --input ./workspace/mp3s/my_song.mp3 \
-    --output ./workspace/midis/my_song.mid
+python audios_to_midis.py transcribe_file --input ./workspace/mp3s/my_song.mp3 --output ./workspace/midis/my_song.mid
 ```
 
 ## 注意事项
