@@ -3,6 +3,7 @@ librosa<0.10
 resampy
 
 # MIDI voice separation (optional)
+./piano_svsep_repo
 partitura
 pytorch_lightning
 torch_geometric

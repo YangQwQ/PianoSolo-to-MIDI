@@ -1,8 +1,14 @@
 import os
+import sys
 import re
 import builtins
 from contextlib import contextmanager
 import argparse
+
+# 修复 Windows 控制台 GBK 编码问题，使其支持 Unicode（日文、音符符号等）
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
 import numpy as np
 import audioread
